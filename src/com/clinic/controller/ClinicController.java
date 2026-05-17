@@ -1,5 +1,6 @@
 package com.clinic.controller;
 
+import com.clinic.model.Appointment;
 import com.clinic.model.Patient;
 import com.clinic.util.DatabaseConnection;
 import java.math.BigDecimal;
@@ -11,10 +12,13 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 public class ClinicController {
 
     public void addPatient(Patient patient, String passwordHash) throws SQLException {
+        validatePasswordHash(passwordHash);
+
         String insertUserSql = "INSERT INTO users(full_name, email, password_hash, role) VALUES (?, ?, ?, 'PATIENT')";
         String insertPatientSql = "INSERT INTO patients(user_id, date_of_birth, phone, address, medical_record) VALUES (?, ?, ?, ?, ?)";
 
@@ -30,12 +34,16 @@ public class ClinicController {
 
                 try (ResultSet generatedKeys = userStatement.getGeneratedKeys()) {
                     if (!generatedKeys.next()) {
-                        throw new SQLException("Creating patient user failed: no generated key returned.");
+                        throw new SQLException("Failed to insert user record: no generated key returned.");
                     }
 
                     int userId = generatedKeys.getInt(1);
+                    java.sql.Date dateOfBirth = patient.getDateOfBirth() == null
+                            ? null
+                            : java.sql.Date.valueOf(patient.getDateOfBirth());
+
                     patientStatement.setInt(1, userId);
-                    patientStatement.setDate(2, patient.getDateOfBirth() == null ? null : java.sql.Date.valueOf(patient.getDateOfBirth()));
+                    patientStatement.setDate(2, dateOfBirth);
                     patientStatement.setString(3, patient.getPhone());
                     patientStatement.setString(4, patient.getAddress());
                     patientStatement.setString(5, patient.getMedicalRecord());
@@ -52,7 +60,7 @@ public class ClinicController {
         }
     }
 
-    public List<String> getAppointmentList() throws SQLException {
+    public List<Appointment> getAppointmentList() throws SQLException {
         String sql = """
                 SELECT a.appointment_id,
                        u_p.full_name AS patient_name,
@@ -67,7 +75,7 @@ public class ClinicController {
                 ORDER BY a.appointment_time
                 """;
 
-        List<String> appointments = new ArrayList<>();
+        List<Appointment> appointments = new ArrayList<>();
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql);
@@ -80,7 +88,7 @@ public class ClinicController {
                 Timestamp appointmentTime = resultSet.getTimestamp("appointment_time");
                 String status = resultSet.getString("status");
 
-                appointments.add(String.format("#%d %s with %s at %s [%s]",
+                appointments.add(new Appointment(
                         appointmentId,
                         patientName,
                         doctorName,
@@ -93,7 +101,16 @@ public class ClinicController {
     }
 
     public boolean updateBilling(int billId, BigDecimal amount, String billingStatus) throws SQLException {
-        String sql = "UPDATE bills SET amount = ?, billing_status = ?, paid_at = CASE WHEN ? = 'PAID' THEN CURRENT_TIMESTAMP ELSE NULL END WHERE bill_id = ?";
+        validateAmount(amount);
+        validateBillingStatus(billingStatus);
+
+        String sql = """
+                UPDATE bills
+                SET amount = ?,
+                    billing_status = ?,
+                    paid_at = CASE WHEN ? = 'PAID' THEN CURRENT_TIMESTAMP ELSE NULL END
+                WHERE bill_id = ?
+                """;
 
         try (Connection connection = DatabaseConnection.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
@@ -104,6 +121,33 @@ public class ClinicController {
             statement.setInt(4, billId);
 
             return statement.executeUpdate() > 0;
+        }
+    }
+
+    private void validatePasswordHash(String passwordHash) {
+        if (passwordHash == null || passwordHash.isBlank()) {
+            throw new IllegalArgumentException("passwordHash must be a non-empty hash value.");
+        }
+
+        boolean isBcrypt = passwordHash.matches("^\\$2[aby]\\$.{56}$");
+        boolean isSha256Hex = passwordHash.matches("^[A-Fa-f0-9]{64}$");
+        boolean isSha256Prefixed = passwordHash.matches("^sha256:[A-Fa-f0-9]{64}$");
+
+        if (!isBcrypt && !isSha256Hex && !isSha256Prefixed) {
+            throw new IllegalArgumentException("passwordHash must be a valid BCrypt or SHA-256 hash value.");
+        }
+    }
+
+    private void validateBillingStatus(String billingStatus) {
+        Set<String> validStatuses = Set.of("UNPAID", "PAID", "PARTIAL");
+        if (!validStatuses.contains(billingStatus)) {
+            throw new IllegalArgumentException("billingStatus must be one of: UNPAID, PAID, PARTIAL.");
+        }
+    }
+
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
+            throw new IllegalArgumentException("amount must be a positive value.");
         }
     }
 }
