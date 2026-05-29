@@ -16,6 +16,16 @@ import java.util.Set;
 
 public class ClinicController {
 
+    private boolean emailExists(Connection connection, String email) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE email = ?";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, email);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next();
+            }
+        }
+    }
+
     public void addPatient(Patient patient, String passwordHash) throws SQLException {
         validatePasswordHash(passwordHash);
 
@@ -23,6 +33,9 @@ public class ClinicController {
         String insertPatientSql = "INSERT INTO patients(user_id, date_of_birth, phone, address, medical_record) VALUES (?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection()) {
+            if (emailExists(connection, patient.getEmail())) {
+                throw new SQLException("User with email '" + patient.getEmail() + "' already exists.");
+            }
             connection.setAutoCommit(false);
             try (PreparedStatement userStatement = connection.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS);
                  PreparedStatement patientStatement = connection.prepareStatement(insertPatientSql)) {
