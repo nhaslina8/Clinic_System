@@ -9,6 +9,12 @@ package com.clinic.view;
  * @author haslina
  */
 
+
+/**
+ *
+ * @author mira
+ */
+
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.*;
