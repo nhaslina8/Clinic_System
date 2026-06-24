@@ -90,7 +90,25 @@ public class DashboardScreen extends JFrame {
         mainPanel.add(contentPanel, BorderLayout.CENTER);
         
         add(mainPanel);
+        // ==========================================
+        // 6. Interaktiviti (Event Listeners)
+        // ==========================================
 
+        // Buka tetingkap Daftar Pesakit Baharu
+        btnDaftar.addActionListener(e -> {
+            new Patient_Registration().setVisible(true);
+        });
+
+        // Buka tetingkap Senarai Temujanji
+        btnTemujanji.addActionListener(e -> {
+            new AppointmentList().setVisible(true);
+        });
+
+        // Buka tetingkap Urus Bil & Pembayaran
+        btnBil.addActionListener(e -> {
+            new Billing_Payment().setVisible(true);
+        });
+        
         // 6. Interaktiviti: Butang Log Keluar
         btnLogout.addActionListener(e -> {
             // Tanya kepastian sebelum log keluar
