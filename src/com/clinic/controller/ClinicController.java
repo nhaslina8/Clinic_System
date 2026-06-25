@@ -26,15 +26,16 @@ public class ClinicController {
         }
     }
 
+    // 1. ADD PATIENT (Kemaskini dengan ic_number)
     public void addPatient(Patient patient, String passwordHash) throws SQLException {
         validatePasswordHash(passwordHash);
 
         String insertUserSql = "INSERT INTO users(full_name, email, password_hash, role) VALUES (?, ?, ?, 'PATIENT')";
-        String insertPatientSql = "INSERT INTO patients(user_id, date_of_birth, phone, address, medical_record) VALUES (?, ?, ?, ?, ?)";
+        String insertPatientSql = "INSERT INTO patients(user_id, ic_number, date_of_birth, phone, address, medical_record) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection connection = DatabaseConnection.getConnection()) {
             if (emailExists(connection, patient.getEmail())) {
-                throw new SQLException("User with email '" + patient.getEmail() + "' already exists.");
+                throw new SQLException("Pengguna dengan e-mel '" + patient.getEmail() + "' telah wujud.");
             }
             connection.setAutoCommit(false);
             try (PreparedStatement userStatement = connection.prepareStatement(insertUserSql, Statement.RETURN_GENERATED_KEYS);
@@ -47,22 +48,19 @@ public class ClinicController {
 
                 try (ResultSet generatedKeys = userStatement.getGeneratedKeys()) {
                     if (!generatedKeys.next()) {
-                        throw new SQLException("Failed to insert user record: no generated key returned.");
+                        throw new SQLException("Gagal mendaftar pengguna baharu.");
                     }
-
                     int userId = generatedKeys.getInt(1);
-                    java.sql.Date dateOfBirth = patient.getDateOfBirth() == null
-                            ? null
-                            : java.sql.Date.valueOf(patient.getDateOfBirth());
+                    java.sql.Date dateOfBirth = patient.getDateOfBirth() == null ? null : java.sql.Date.valueOf(patient.getDateOfBirth());
 
                     patientStatement.setInt(1, userId);
-                    patientStatement.setDate(2, dateOfBirth);
-                    patientStatement.setString(3, patient.getPhone());
-                    patientStatement.setString(4, patient.getAddress());
-                    patientStatement.setString(5, patient.getMedicalRecord());
+                    patientStatement.setString(2, patient.getIcNumber());
+                    patientStatement.setDate(3, dateOfBirth);
+                    patientStatement.setString(4, patient.getPhone());
+                    patientStatement.setString(5, patient.getAddress());
+                    patientStatement.setString(6, patient.getMedicalRecord());
                     patientStatement.executeUpdate();
                 }
-
                 connection.commit();
             } catch (SQLException exception) {
                 connection.rollback();
@@ -164,8 +162,9 @@ public class ClinicController {
         }
     }
     // 1. Ambil Semua Senarai Pesakit dari Database untuk dimasukkan ke JTable
+   // 2. GET PATIENT LIST (Kemaskini dengan p.ic_number)
     public List<Patient> getPatientList() throws SQLException {
-        String sql = "SELECT u.user_id, u.full_name, u.email, p.date_of_birth, p.phone, p.address, p.medical_record " +
+        String sql = "SELECT u.user_id, u.full_name, u.email, p.ic_number, p.date_of_birth, p.phone, p.address, p.medical_record " +
                      "FROM users u JOIN patients p ON u.user_id = p.user_id WHERE u.role = 'PATIENT'";
         List<Patient> list = new ArrayList<>();
         try (Connection conn = DatabaseConnection.getConnection();
@@ -177,6 +176,7 @@ public class ClinicController {
                 list.add(new Patient(
                     rs.getInt("user_id"),
                     rs.getString("full_name"),
+                    rs.getString("ic_number"),
                     rs.getString("email"),
                     dob,
                     rs.getString("phone"),
@@ -188,10 +188,10 @@ public class ClinicController {
         return list;
     }
 
-    // 2. Fungsi Kemaskini Rekod Pesakit (Update KPI)
+    // 3. UPDATE PATIENT (Kemaskini dengan ic_number)
     public boolean updatePatient(Patient patient) throws SQLException {
         String updateUsers = "UPDATE users SET full_name = ?, email = ? WHERE user_id = ?";
-        String updatePatients = "UPDATE patients SET date_of_birth = ?, phone = ?, address = ?, medical_record = ? WHERE user_id = ?";
+        String updatePatients = "UPDATE patients SET ic_number = ?, date_of_birth = ?, phone = ?, address = ?, medical_record = ? WHERE user_id = ?";
         
         try (Connection conn = DatabaseConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -204,11 +204,12 @@ public class ClinicController {
                 stmt1.executeUpdate();
 
                 java.sql.Date dob = (patient.getDateOfBirth() == null) ? null : java.sql.Date.valueOf(patient.getDateOfBirth());
-                stmt2.setDate(1, dob);
-                stmt2.setString(2, patient.getPhone());
-                stmt2.setString(3, patient.getAddress());
-                stmt2.setString(4, patient.getMedicalRecord());
-                stmt2.setInt(5, patient.getId());
+                stmt2.setString(1, patient.getIcNumber());
+                stmt2.setDate(2, dob);
+                stmt2.setString(3, patient.getPhone());
+                stmt2.setString(4, patient.getAddress());
+                stmt2.setString(5, patient.getMedicalRecord());
+                stmt2.setInt(6, patient.getId());
                 stmt2.executeUpdate();
 
                 conn.commit();
