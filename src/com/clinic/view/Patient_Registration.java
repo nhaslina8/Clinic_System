@@ -20,14 +20,14 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableRowSorter;
 
 public class Patient_Registration extends JFrame {
 
-    private JTextField namaField, emailField, phoneField, dobField, searchField;
-    private JPasswordField passwordField;
+    private JTextField namaField, icField, emailField, phoneField, dobField, searchField;
     private JTextArea addressArea, medicalRecordArea;
     private JTable table;
     private DefaultTableModel tableModel;
@@ -41,25 +41,23 @@ public class Patient_Registration extends JFrame {
     public Patient_Registration() {
         clinicController = new ClinicController();
 
-        // 1. Tetapan Asas Tetingkap
         setTitle("Sistem Klinik Pintar - Pengurusan Pesakit");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(1000, 750);
+        setSize(1050, 750);
         setLocationRelativeTo(null);
         setMinimumSize(new Dimension(850, 600));
 
-        JPanel mainPanel = new JPanel(new BorderLayout(15, 10)); // Kurangkan gap menegak
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 15, 20)); // Kurangkan padding atas
+        JPanel mainPanel = new JPanel(new BorderLayout(15, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 15, 20));
         mainPanel.setBackground(new Color(245, 247, 250));
 
-        // Title Label
         JLabel titleLabel = new JLabel("Pendaftaran & Pengurusan Pesakit");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20)); // Saiz font tajuk dikurangkan sikit
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(new Color(33, 37, 41));
         mainPanel.add(titleLabel, BorderLayout.NORTH);
 
         // ==========================================
-        // 2. Bahagian Borang (Versi Compact)
+        // BORANG MAKLUMAT PESAKIT
         // ==========================================
         JPanel formPanel = new JPanel(new GridBagLayout());
         formPanel.setBackground(Color.WHITE);
@@ -67,17 +65,16 @@ public class Patient_Registration extends JFrame {
                 BorderFactory.createLineBorder(new Color(200, 200, 200), 1, true), "Maklumat Pesakit");
         formBorder.setTitleFont(new Font("Segoe UI", Font.BOLD, 13));
         formBorder.setTitleColor(new Color(70, 70, 70));
-        // Padding dalam borang diminimumkan
         formPanel.setBorder(BorderFactory.createCompoundBorder(formBorder, BorderFactory.createEmptyBorder(5, 15, 5, 15)));
         
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 15, 4, 15); // INSETS DIKURANGKAN SECARA DRASTIK (ruang atas bawah input)
+        gbc.insets = new Insets(4, 15, 4, 15);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
         Font labelFont = new Font("Segoe UI", Font.PLAIN, 13);
-        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 13); // Font input sedikit padat
+        Font fieldFont = new Font("Segoe UI", Font.PLAIN, 13);
 
-        // Baris 1
+        // Baris 1: Nama & IC (Tiada lagi Password)
         gbc.gridx = 0; gbc.gridy = 0; gbc.weightx = 0.15;
         JLabel lblNama = new JLabel("Nama Penuh:"); lblNama.setFont(labelFont);
         formPanel.add(lblNama, gbc);
@@ -87,14 +84,14 @@ public class Patient_Registration extends JFrame {
         formPanel.add(namaField, gbc);
 
         gbc.gridx = 2; gbc.gridy = 0; gbc.weightx = 0.15;
-        JLabel lblPhone = new JLabel("No. Telefon:"); lblPhone.setFont(labelFont);
-        formPanel.add(lblPhone, gbc);
-        phoneField = new JTextField(); phoneField.setFont(fieldFont);
-        applyPlaceholder(phoneField, "Cth: 0123456789");
+        JLabel lblIc = new JLabel("No. Kad Pengenalan:"); lblIc.setFont(labelFont);
+        formPanel.add(lblIc, gbc);
+        icField = new JTextField(); icField.setFont(fieldFont);
+        applyPlaceholder(icField, "Cth: 920424025566 (Tanpa Sengkang)");
         gbc.gridx = 3; gbc.gridy = 0; gbc.weightx = 0.35;
-        formPanel.add(phoneField, gbc);
+        formPanel.add(icField, gbc);
 
-        // Baris 2
+        // Baris 2: E-mel & No Telefon
         gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0.15;
         JLabel lblEmail = new JLabel("E-mel:"); lblEmail.setFont(labelFont);
         formPanel.add(lblEmail, gbc);
@@ -104,22 +101,23 @@ public class Patient_Registration extends JFrame {
         formPanel.add(emailField, gbc);
 
         gbc.gridx = 2; gbc.gridy = 1; gbc.weightx = 0.15;
+        JLabel lblPhone = new JLabel("No. Telefon:"); lblPhone.setFont(labelFont);
+        formPanel.add(lblPhone, gbc);
+        phoneField = new JTextField(); phoneField.setFont(fieldFont);
+        applyPlaceholder(phoneField, "Cth: 0123456789");
+        gbc.gridx = 3; gbc.gridy = 1; gbc.weightx = 0.35;
+        formPanel.add(phoneField, gbc);
+
+        // Baris 3: DOB & Empty (Atau boleh biar je kosong sebelah kanan)
+        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.15;
         JLabel lblDob = new JLabel("Tarikh Lahir:"); lblDob.setFont(labelFont);
         formPanel.add(lblDob, gbc);
         dobField = new JTextField(); dobField.setFont(fieldFont);
         applyPlaceholder(dobField, "YYYY-MM-DD");
-        gbc.gridx = 3; gbc.gridy = 1; gbc.weightx = 0.35;
+        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.35;
         formPanel.add(dobField, gbc);
 
-        // Baris 3
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0.15;
-        JLabel lblPass = new JLabel("Kata Laluan:"); lblPass.setFont(labelFont);
-        formPanel.add(lblPass, gbc);
-        passwordField = new JPasswordField(); passwordField.setFont(fieldFont);
-        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 0.35;
-        formPanel.add(passwordField, gbc);
-
-        // Baris 4 - JTextArea padat
+        // Baris 4: Alamat (Merge lajur)
         gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0.15; gbc.anchor = GridBagConstraints.NORTHWEST;
         JLabel lblAddr = new JLabel("Alamat:"); lblAddr.setFont(labelFont);
         formPanel.add(lblAddr, gbc);
@@ -129,7 +127,7 @@ public class Patient_Registration extends JFrame {
         gbc.gridx = 1; gbc.gridy = 3; gbc.gridwidth = 3; gbc.weightx = 0.85; 
         formPanel.add(scrollAddress, gbc);
 
-        // Baris 5 - JTextArea padat
+        // Baris 5: Rekod Perubatan
         gbc.gridx = 0; gbc.gridy = 4; gbc.gridwidth = 1; gbc.weightx = 0.15;
         JLabel lblMed = new JLabel("Rekod Perubatan:"); lblMed.setFont(labelFont);
         formPanel.add(lblMed, gbc);
@@ -156,60 +154,52 @@ public class Patient_Registration extends JFrame {
         formActionPanel.add(btnKosongkan);
         formActionPanel.add(btnSimpan);
 
-        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 4; gbc.insets = new Insets(10, 0, 0, 0); // Gap atas butang diminimumkan
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 4; gbc.insets = new Insets(10, 0, 0, 0);
         formPanel.add(formActionPanel, gbc);
 
-        // Wrap Form supaya duduk diam di atas
         JPanel topWrapper = new JPanel(new BorderLayout());
         topWrapper.setBackground(new Color(245, 247, 250));
         topWrapper.add(formPanel, BorderLayout.NORTH);
 
         // ==========================================
-        // 3. Bahagian Carian (Search Bar)
+        // BAR CARIAN & JADUAL
         // ==========================================
-        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5)); // Gap dioptimumkan
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         searchPanel.setBackground(new Color(245, 247, 250));
-        
-        JLabel lblSearch = new JLabel("🔍 Carian Nama Pesakit:");
-        lblSearch.setFont(new Font("Segoe UI Emoji", Font.BOLD, 13));
-        
+        JLabel lblSearch = new JLabel("Carian Pesakit:");
+        lblSearch.setFont(new Font("Segoe UI", Font.BOLD, 13));
         searchField = new JTextField(30);
         searchField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         applyPlaceholder(searchField, "Taipkan nama untuk mula carian pantas...");
-        
-        searchPanel.add(lblSearch);
-        searchPanel.add(searchField);
+        searchPanel.add(lblSearch); searchPanel.add(searchField);
 
-        // ==========================================
-        // 4. Bahagian Jadual & Butang Tindakan
-        // ==========================================
         JPanel tableContainer = new JPanel(new BorderLayout(5, 5));
         tableContainer.setBackground(new Color(245, 247, 250));
         tableContainer.add(searchPanel, BorderLayout.NORTH); 
 
-        String[] columns = {"ID", "Nama Penuh", "E-mel", "No. Telefon", "Tarikh Lahir", "Alamat", "Rekod Perubatan"};
+        String[] columns = {"ID", "Nama Penuh", "No. IC", "E-mel", "No. Telefon", "Tarikh Lahir", "Alamat", "Rekod Perubatan"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int column) { return false; }
         };
         table = new JTable(tableModel);
-        
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
         
-        table.setRowHeight(28); // Tinggi row dikurangkan sikit untuk nampak lebih banyak rekod
+        table.setRowHeight(28);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.setIntercellSpacing(new Dimension(10, 5));
         
         JTableHeader header = table.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 13));
         header.setBackground(new Color(230, 235, 240));
         header.setPreferredSize(new Dimension(header.getWidth(), 35));
+        DefaultTableCellRenderer headerRenderer = (DefaultTableCellRenderer) header.getDefaultRenderer();
+        headerRenderer.setHorizontalAlignment(JLabel.LEFT);
 
-        // Menyembunyikan Kolom ID
-        table.getColumnModel().removeColumn(table.getColumnModel().getColumn(0));
-        table.getColumnModel().getColumn(0).setPreferredWidth(150);
-        table.getColumnModel().getColumn(1).setPreferredWidth(150);
+        table.getColumnModel().removeColumn(table.getColumnModel().getColumn(0)); // Sembunyikan ID
+        table.getColumnModel().getColumn(0).setPreferredWidth(150); // Nama
+        table.getColumnModel().getColumn(1).setPreferredWidth(120); // IC
+        table.getColumnModel().getColumn(2).setPreferredWidth(150); // E-mel
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(BorderFactory.createLineBorder(new Color(220, 220, 220)));
@@ -219,52 +209,40 @@ public class Patient_Registration extends JFrame {
         actionPanel.setBackground(new Color(245, 247, 250));
         
         btnEdit = new JButton("✎ Kemaskini Pilihan");
-        btnEdit.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
+        btnEdit.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnEdit.setBackground(new Color(0, 123, 255));
         btnEdit.setForeground(Color.WHITE);
         
         btnDelete = new JButton("🗑 Padam Rekod");
-        btnDelete.setFont(new Font("Segoe UI Emoji", Font.BOLD, 12));
+        btnDelete.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnDelete.setBackground(new Color(220, 53, 69)); 
         btnDelete.setForeground(Color.WHITE);
         
-        actionPanel.add(btnEdit);
-        actionPanel.add(btnDelete);
+        actionPanel.add(btnEdit); actionPanel.add(btnDelete);
         tableContainer.add(actionPanel, BorderLayout.SOUTH);
 
-        // ==========================================
-        // PENYELESAIAN ISU RUANG: SPLIT PANE ADJUSTMENT
-        // ==========================================
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, topWrapper, tableContainer);
-        splitPane.setResizeWeight(0.2); // Form ambil ruang minimum yang boleh
+        splitPane.setResizeWeight(0.2); 
         splitPane.setOneTouchExpandable(true); 
         splitPane.setDividerSize(10); 
         splitPane.setBorder(null);
-        splitPane.setBackground(new Color(245, 247, 250));
-        
-        // TETAPAN KUNCI: Paksa form supaya kecil (300px sahaja berbanding 370px sebelum ni)
         splitPane.setDividerLocation(300); 
-
         mainPanel.add(splitPane, BorderLayout.CENTER);
         add(mainPanel);
 
         loadDataFromDatabase();
 
         // ==========================================
-        // 5. Interaktiviti (Tindakan Butang & Carian)
+        // TINDAKAN BUTANG & INTERAKTIVITI
         // ==========================================
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { search(); }
             @Override public void removeUpdate(DocumentEvent e) { search(); }
             @Override public void changedUpdate(DocumentEvent e) { search(); }
-            
             private void search() {
                 String text = searchField.getText();
-                if (text.trim().length() == 0) {
-                    rowSorter.setRowFilter(null); 
-                } else {
-                    rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1));
-                }
+                if (text.trim().length() == 0) rowSorter.setRowFilter(null); 
+                else rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + text, 1));
             }
         });
 
@@ -273,16 +251,33 @@ public class Patient_Registration extends JFrame {
         btnSimpan.addActionListener(e -> {
             try {
                 String nama = namaField.getText().trim();
+                String ic = icField.getText().trim();
                 String email = emailField.getText().trim();
-                String password = new String(passwordField.getPassword()).trim();
                 String dobStr = dobField.getText().trim();
                 String phone = phoneField.getText().trim();
                 String address = addressArea.getText().trim();
                 String medicalRecord = medicalRecordArea.getText().trim();
 
                 if(nama.isEmpty() || email.isEmpty() || dobStr.isEmpty() || phone.isEmpty()) {
-                    throw new Exception("Sila isi semua ruangan wajib (Nama, E-mel, DOB, No Telefon)!");
+                    throw new Exception("Sila isi semua ruangan asas (Nama, E-mel, Tarikh Lahir, No Telefon)!");
                 }
+
+                // ============================================================
+                // KPI DEMO: ERROR HANDLING UNTUK KAD PENGENALAN (IC)
+                // ============================================================
+                if (ic.isEmpty()) {
+                    icField.requestFocus();
+                    throw new Exception("RALAT KOSONG: Sila masukkan No. Kad Pengenalan (IC).");
+                }
+                if (ic.length() != 12) {
+                    icField.requestFocus();
+                    throw new Exception("RALAT PANJANG IC: No. IC mestilah tepat 12 digit (Tanpa sengkang '-').\nContoh: 920424025566");
+                }
+                if (!ic.matches("\\d+")) {
+                    icField.requestFocus();
+                    throw new Exception("RALAT HURUF/SIMBOL: No. IC hanya boleh mengandungi angka (0-9) sahaja.");
+                }
+                // ============================================================
 
                 LocalDate dob;
                 try {
@@ -292,14 +287,16 @@ public class Patient_Registration extends JFrame {
                 }
 
                 if (editingRow == -1) {
-                    if (password.isEmpty()) throw new Exception("Kata laluan wajib diisi untuk pesakit baru!");
-                    String passwordHash = generateSHA256Hash(password);
-                    Patient newPatient = new Patient(0, nama, email, dob, phone, address, medicalRecord);
+                    // MOD: TAMBAH BARU
+                    // No IC dijadikan sebagai default password di belakang tabir!
+                    String passwordHash = generateSHA256Hash(ic); 
                     
+                    Patient newPatient = new Patient(0, nama, ic, email, dob, phone, address, medicalRecord);
                     clinicController.addPatient(newPatient, passwordHash);
-                    JOptionPane.showMessageDialog(this, "Pesakit baharu berjaya didaftarkan.", "Berjaya", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Pesakit baharu berjaya didaftarkan.\nKata laluan lalai (default password) pesakit ini adalah No. IC beliau.", "Berjaya", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    Patient updatedPatient = new Patient(editingPatientId, nama, email, dob, phone, address, medicalRecord);
+                    // MOD: KEMASKINI REKOD
+                    Patient updatedPatient = new Patient(editingPatientId, nama, ic, email, dob, phone, address, medicalRecord);
                     clinicController.updatePatient(updatedPatient);
                     JOptionPane.showMessageDialog(this, "Rekod pesakit berjaya dikemaskini.", "Berjaya", JOptionPane.INFORMATION_MESSAGE);
                 }
@@ -322,13 +319,13 @@ public class Patient_Registration extends JFrame {
                 editingPatientId = Integer.parseInt(tableModel.getValueAt(modelRow, 0).toString());
                 
                 namaField.setText(tableModel.getValueAt(modelRow, 1).toString());
-                emailField.setText(tableModel.getValueAt(modelRow, 2).toString());
-                phoneField.setText(tableModel.getValueAt(modelRow, 3).toString());
-                dobField.setText(tableModel.getValueAt(modelRow, 4).toString());
-                addressArea.setText(tableModel.getValueAt(modelRow, 5).toString());
-                medicalRecordArea.setText(tableModel.getValueAt(modelRow, 6).toString());
+                icField.setText(tableModel.getValueAt(modelRow, 2).toString());
+                emailField.setText(tableModel.getValueAt(modelRow, 3).toString());
+                phoneField.setText(tableModel.getValueAt(modelRow, 4).toString());
+                dobField.setText(tableModel.getValueAt(modelRow, 5).toString());
+                addressArea.setText(tableModel.getValueAt(modelRow, 6).toString());
+                medicalRecordArea.setText(tableModel.getValueAt(modelRow, 7).toString());
                 
-                passwordField.setText(""); 
                 btnSimpan.setText("✔ Sahkan Kemaskini");
                 btnSimpan.setBackground(new Color(255, 152, 0)); 
                 namaField.requestFocus();
@@ -363,7 +360,7 @@ public class Patient_Registration extends JFrame {
     }
 
     private void resetFormState() {
-        namaField.setText(""); emailField.setText(""); passwordField.setText("");
+        namaField.setText(""); icField.setText(""); emailField.setText(""); 
         dobField.setText(""); phoneField.setText(""); addressArea.setText("");
         medicalRecordArea.setText(""); 
         
@@ -381,7 +378,7 @@ public class Patient_Registration extends JFrame {
             List<Patient> patients = clinicController.getPatientList();
             for (Patient p : patients) {
                 tableModel.addRow(new Object[]{
-                    p.getId(), p.getFullName(), p.getEmail(), p.getPhone(),
+                    p.getId(), p.getFullName(), p.getIcNumber(), p.getEmail(), p.getPhone(),
                     p.getDateOfBirth() != null ? p.getDateOfBirth().toString() : "",
                     p.getAddress(), p.getMedicalRecord()
                 });
@@ -408,10 +405,7 @@ public class Patient_Registration extends JFrame {
     }
 
     private void applyPlaceholder(JTextField field, String text) {
-        try {
-            field.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, text);
-        } catch (Exception e) {
-            // Abaikan jika FlatLaf tidak digunakan
-        }
+        try { field.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, text); } 
+        catch (Exception e) { }
     }
 }

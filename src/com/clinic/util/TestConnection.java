@@ -23,6 +23,7 @@ public class TestConnection {
         Patient newPatient = new Patient(
             0, // Biarkan 0 kerana ID akan dijana secara automatik (Auto-Increment) oleh MySQL
             "Ahmad Albab",
+            "920423025566",
             "ahmad.albab@example.com",
             LocalDate.of(1995, 8, 24), // Format: Tahun, Bulan, Hari
             "0198765432",

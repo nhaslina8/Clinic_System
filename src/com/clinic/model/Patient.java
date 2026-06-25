@@ -3,17 +3,23 @@ package com.clinic.model;
 import java.time.LocalDate;
 
 public class Patient extends Person {
+    private String icNumber;
     private LocalDate dateOfBirth;
     private String phone;
     private String address;
     private String medicalRecord;
 
-    public Patient(int id, String fullName, String email, LocalDate dateOfBirth, String phone, String address, String medicalRecord) {
+    public Patient(int id, String fullName, String icNumber, String email, LocalDate dateOfBirth, String phone, String address, String medicalRecord) {
         super(id, fullName, email);
+        this.icNumber = icNumber;
         this.dateOfBirth = dateOfBirth;
         this.phone = phone;
         this.address = address;
         this.medicalRecord = medicalRecord;
+    }
+    
+    public String getIcNumber() {
+        return icNumber;
     }
 
     public LocalDate getDateOfBirth() {
