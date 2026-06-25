@@ -163,4 +163,165 @@ public class ClinicController {
             throw new IllegalArgumentException("amount must be a positive value.");
         }
     }
+    // 1. Ambil Semua Senarai Pesakit dari Database untuk dimasukkan ke JTable
+    public List<Patient> getPatientList() throws SQLException {
+        String sql = "SELECT u.user_id, u.full_name, u.email, p.date_of_birth, p.phone, p.address, p.medical_record " +
+                     "FROM users u JOIN patients p ON u.user_id = p.user_id WHERE u.role = 'PATIENT'";
+        List<Patient> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                java.sql.Date dbDate = rs.getDate("date_of_birth");
+                java.time.LocalDate dob = (dbDate != null) ? dbDate.toLocalDate() : null;
+                list.add(new Patient(
+                    rs.getInt("user_id"),
+                    rs.getString("full_name"),
+                    rs.getString("email"),
+                    dob,
+                    rs.getString("phone"),
+                    rs.getString("address"),
+                    rs.getString("medical_record")
+                ));
+            }
+        }
+        return list;
+    }
+
+    // 2. Fungsi Kemaskini Rekod Pesakit (Update KPI)
+    public boolean updatePatient(Patient patient) throws SQLException {
+        String updateUsers = "UPDATE users SET full_name = ?, email = ? WHERE user_id = ?";
+        String updatePatients = "UPDATE patients SET date_of_birth = ?, phone = ?, address = ?, medical_record = ? WHERE user_id = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmt1 = conn.prepareStatement(updateUsers);
+                 PreparedStatement stmt2 = conn.prepareStatement(updatePatients)) {
+                
+                stmt1.setString(1, patient.getFullName());
+                stmt1.setString(2, patient.getEmail());
+                stmt1.setInt(3, patient.getId());
+                stmt1.executeUpdate();
+
+                java.sql.Date dob = (patient.getDateOfBirth() == null) ? null : java.sql.Date.valueOf(patient.getDateOfBirth());
+                stmt2.setDate(1, dob);
+                stmt2.setString(2, patient.getPhone());
+                stmt2.setString(3, patient.getAddress());
+                stmt2.setString(4, patient.getMedicalRecord());
+                stmt2.setInt(5, patient.getId());
+                stmt2.executeUpdate();
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+
+    // 3. Fungsi Padam Rekod Pesakit (Delete KPI)
+    public boolean deletePatient(int patientId) throws SQLException {
+        String deletePatients = "DELETE FROM patients WHERE user_id = ?";
+        String deleteUsers = "DELETE FROM users WHERE user_id = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try (PreparedStatement stmt1 = conn.prepareStatement(deletePatients);
+                 PreparedStatement stmt2 = conn.prepareStatement(deleteUsers)) {
+                
+                stmt1.setInt(1, patientId);
+                stmt1.executeUpdate();
+
+                stmt2.setInt(1, patientId);
+                int rows = stmt2.executeUpdate();
+
+                conn.commit();
+                return rows > 0;
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            } finally {
+                conn.setAutoCommit(true);
+            }
+        }
+    }
+    
+    // 4. Fungsi Padam Temujanji (Delete Appointment)
+    public boolean deleteAppointment(int appointmentId) throws SQLException {
+        String sql = "DELETE FROM appointments WHERE appointment_id = ?";
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setInt(1, appointmentId);
+            int rowsAffected = stmt.executeUpdate();
+            
+            return rowsAffected > 0;
+        }
+    }
+    // Fungsi Tambah Temujanji Baru (Create)
+    public void addAppointment(int patientId, int doctorId, Timestamp appointmentTime, String status) throws SQLException {
+        String sql = "INSERT INTO appointments (patient_id, doctor_id, appointment_time, status) VALUES (?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, patientId);
+            stmt.setInt(2, doctorId);
+            stmt.setTimestamp(3, appointmentTime);
+            stmt.setString(4, status);
+            stmt.executeUpdate();
+        }
+    }
+
+    // Fungsi Kemaskini Masa & Status Temujanji (Update)
+    public boolean updateAppointmentDetails(int appointmentId, Timestamp appointmentTime, String status) throws SQLException {
+        String sql = "UPDATE appointments SET appointment_time = ?, status = ? WHERE appointment_id = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setTimestamp(1, appointmentTime);
+            stmt.setString(2, status);
+            stmt.setInt(3, appointmentId);
+            return stmt.executeUpdate() > 0;
+        }
+    }
+    // Fungsi untuk mendapatkan senarai Doktor untuk Dropdown
+    public List<String[]> getActiveDoctors() throws SQLException {
+        // Query ini mencantumkan jadual doctors dan users untuk dapatkan nama dan ID
+        String sql = "SELECT d.doctor_id, u.full_name FROM doctors d JOIN users u ON d.user_id = u.user_id WHERE u.role = 'DOCTOR'";
+        List<String[]> list = new java.util.ArrayList<>();
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                list.add(new String[]{
+                    String.valueOf(rs.getInt("doctor_id")), 
+                    rs.getString("full_name")
+                });
+            }
+        }
+        return list;
+    }
+    // Fungsi untuk mendapatkan senarai Pesakit dengan PATIENT_ID yang betul untuk Dropdown
+    public List<String[]> getActivePatients() throws SQLException {
+        // Query ini wajib ambil p.patient_id, BUKAN u.user_id
+        String sql = "SELECT p.patient_id, u.full_name FROM patients p JOIN users u ON p.user_id = u.user_id WHERE u.role = 'PATIENT'";
+        List<String[]> list = new java.util.ArrayList<>();
+        
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            
+            while (rs.next()) {
+                list.add(new String[]{
+                    String.valueOf(rs.getInt("patient_id")), 
+                    rs.getString("full_name")
+                });
+            }
+        }
+        return list;
+    }
 }
