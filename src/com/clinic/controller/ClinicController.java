@@ -325,4 +325,18 @@ public class ClinicController {
         }
         return list;
     }
+    // Fungsi untuk mengesahkan Log Masuk Pengguna
+    public boolean authenticateUser(String email, String passwordHash) throws SQLException {
+        String sql = "SELECT 1 FROM users WHERE email = ? AND password_hash = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            
+            stmt.setString(1, email);
+            stmt.setString(2, passwordHash);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next(); // Mengembalikan nilai TRUE jika e-mel dan password hash wujud
+            }
+        }
+    }
 }
