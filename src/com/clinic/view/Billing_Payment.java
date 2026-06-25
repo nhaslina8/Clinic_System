@@ -8,7 +8,7 @@ import javax.swing.*;
 
 /**
  *
- * @author HP
+ * @author mira
  */
 public class Billing_Payment extends JFrame {
 
